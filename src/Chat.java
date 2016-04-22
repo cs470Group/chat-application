@@ -7,58 +7,25 @@ import java.util.Scanner;
 
 public class Chat {
 	private static final int LISTENING_PORT = 8000;
+	private ServerSocket serverSocket;
+	private Scanner scanner;
 	
 	public Chat() {
-//		this.startServer();
-		
-		Scanner scanner = new Scanner(System.in);
-		
-		while(true) {
-			String command = scanner.nextLine();
-			
-			if (command.equals("help")) {
-				this.showHelp();
-			} else if(command.equals("myip")) {
-				this.showRealIP();
-			} else if (command.equals("myport")) {
-				this.showListeningPort();
-			} else if (command.contains("connect")) {
-				String info = command.substring("connect ".length());
-				String[] arr = info.split(" ");
-				this.connectToServer(arr[0], Integer.parseInt(arr[1]));
-			} else if (command.equals("exit")) {
-				this.exit();
-			}
-		}
+		this.startServer();
+		(new CommandThread()).start();
 	}
 	
 	public void startServer() {
 		System.out.println("The server is running!");
 		try {
 			// Create a server socket listening to port 8000
-			ServerSocket serverSocket = new ServerSocket(LISTENING_PORT);
-			
-			while(true) {
-				// Listen for a connection request
-				Socket socket = serverSocket.accept();
-				System.out.println("Connected!");
-			}
+			this.serverSocket = new ServerSocket(LISTENING_PORT);
+
+			(new ListeningThread()).start();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
-//	public void startClient() {
-//		System.out.println("Client method!");
-//		// Create a socket to connect to the server
-//		try {
-//			Socket socket = new Socket("localhost", 8000);
-//		} catch (UnknownHostException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//	}
 	
 	/* Display information about the available user interface options / command manual */
 	public void showHelp() {
@@ -109,9 +76,53 @@ public class Chat {
 	
 	/* Closes all connections and terminates this process */
 	public boolean exit() {
+		try {
+			this.serverSocket.close();
+			this.scanner.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.exit(0);
 		
 		return false;
+	}
+	
+	class CommandThread extends Thread {
+		public void run() {
+			scanner = new Scanner(System.in);
+			
+			while(true) {
+				String command = scanner.nextLine();
+				
+				if (command.equals("help")) {
+					showHelp();
+				} else if(command.equals("myip")) {
+					showRealIP();
+				} else if (command.equals("myport")) {
+					showListeningPort();
+				} else if (command.contains("connect")) {
+					String info = command.substring("connect ".length());
+					String[] arr = info.split(" ");
+					connectToServer(arr[0], Integer.parseInt(arr[1]));
+				} else if (command.equals("exit")) {
+					exit();
+				}
+			}
+		}
+	}
+	
+	class ListeningThread extends Thread {
+		public void run() {
+			while(true) {
+				// Listen for a connection request
+				try {
+					Socket socket = serverSocket.accept();
+					System.out.println("Connected!");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	public static void main(String[] args) {
