@@ -3,19 +3,37 @@ import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public class Chat {
 	private static final int LISTENING_PORT = 8000;
 	
 	public Chat() {
-		this.showListeningPort();
-		this.showRealIP();
-//		startServer();
-//		startClient();
+//		this.startServer();
+		
+		Scanner scanner = new Scanner(System.in);
+		
+		while(true) {
+			String command = scanner.nextLine();
+			
+			if (command.equals("help")) {
+				this.showHelp();
+			} else if(command.equals("myip")) {
+				this.showRealIP();
+			} else if (command.equals("myport")) {
+				this.showListeningPort();
+			} else if (command.contains("connect")) {
+				String info = command.substring("connect ".length());
+				String[] arr = info.split(" ");
+				this.connectToServer(arr[0], Integer.parseInt(arr[1]));
+			} else if (command.equals("exit")) {
+				this.exit();
+			}
+		}
 	}
 	
 	public void startServer() {
-		System.out.println("Server method!");
+		System.out.println("The server is running!");
 		try {
 			// Create a server socket listening to port 8000
 			ServerSocket serverSocket = new ServerSocket(LISTENING_PORT);
@@ -30,17 +48,17 @@ public class Chat {
 		}
 	}
 	
-	public void startClient() {
-		System.out.println("Client method!");
-		// Create a socket to connect to the server
-		try {
-			Socket socket = new Socket("localhost", 8000);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+//	public void startClient() {
+//		System.out.println("Client method!");
+//		// Create a socket to connect to the server
+//		try {
+//			Socket socket = new Socket("localhost", 8000);
+//		} catch (UnknownHostException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
 	
 	/* Display information about the available user interface options / command manual */
 	public void showHelp() {
@@ -62,6 +80,15 @@ public class Chat {
 	}
 	
 	public boolean connectToServer(String destination, int port) {
+		// Create a socket to connect to the server
+		try {
+			Socket socket = new Socket(destination, port);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		return false;
 	}
 	
@@ -82,6 +109,8 @@ public class Chat {
 	
 	/* Closes all connections and terminates this process */
 	public boolean exit() {
+		System.exit(0);
+		
 		return false;
 	}
 
