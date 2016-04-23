@@ -3,13 +3,16 @@ import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Chat {
 	private ServerSocket serverSocket;
 	private Scanner scanner;
+	private ArrayList<Socket> sockets;
 	
 	public Chat(int listeningPort) {
+		this.sockets = new ArrayList<Socket>();
 		this.startServer(listeningPort);
 		(new CommandThread()).start();
 	}
@@ -60,7 +63,13 @@ public class Chat {
 	
 	/* Display a numbered list of all connections this process is part of */
 	public void showConnections() {
-		
+		for (int i = 0; i < this.sockets.size(); i++) {
+			try {
+				System.out.println(i + ": " + this.sockets.get(i).getInetAddress().getLocalHost().getHostAddress() + " " + this.sockets.get(i).getPort());
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/* Terminates connection with host associated with id */
@@ -118,6 +127,7 @@ public class Chat {
 				try {
 					// Listen for a connection request
 					Socket socket = serverSocket.accept();
+					sockets.add(socket);
 					
 					// Create a new thread for the connection
 					(new SocketThread(socket)).start();
