@@ -6,20 +6,19 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Chat {
-	private static final int LISTENING_PORT = 8000;
 	private ServerSocket serverSocket;
 	private Scanner scanner;
 	
-	public Chat() {
-		this.startServer();
+	public Chat(int listeningPort) {
+		this.startServer(listeningPort);
 		(new CommandThread()).start();
 	}
 	
-	public void startServer() {
+	public void startServer(int listeningPort) {
 		System.out.println("The server is running!");
 		try {
-			// Create a server socket listening to port 8000
-			this.serverSocket = new ServerSocket(LISTENING_PORT);
+			// Create a server socket listening to given port number
+			this.serverSocket = new ServerSocket(listeningPort);
 
 			(new ListeningThread()).start();
 		} catch (IOException e) {
@@ -43,7 +42,7 @@ public class Chat {
 	
 	/* Display the port on which this process is listening for incoming connections */
 	public void showListeningPort() {
-		System.out.println(LISTENING_PORT);
+		System.out.println(this.serverSocket.getLocalPort());
 	}
 	
 	public boolean connectToServer(String destination, int port) {
@@ -100,6 +99,8 @@ public class Chat {
 					showRealIP();
 				} else if (command.equals("myport")) {
 					showListeningPort();
+				} else if (command.equals("list")) {
+					showConnections();
 				} else if (command.contains("connect")) {
 					String info = command.substring("connect ".length());
 					String[] arr = info.split(" ");
@@ -114,19 +115,33 @@ public class Chat {
 	class ListeningThread extends Thread {
 		public void run() {
 			while(true) {
-				// Listen for a connection request
 				try {
+					// Listen for a connection request
 					Socket socket = serverSocket.accept();
-					System.out.println("Connected!");
+					
+					// Create a new thread for the connection
+					(new SocketThread(socket)).start();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		}
+		
+		class SocketThread extends Thread {
+			private Socket socket;
+			
+			public SocketThread(Socket socket) {
+				this.socket = socket;
+			}
+			
+			public void run() {
+				System.out.println("Connected! " + this.socket.getPort());
+			}
+		}
 	}
 
 	public static void main(String[] args) {
-		new Chat();
+		new Chat(Integer.parseInt(args[0]));
 	}
 
 }
