@@ -31,17 +31,18 @@ public class Chat {
 	
 	/* Display information about the available user interface options / command manual */
 	public void showHelp() {
-		System.out.println("List of Available Commands:");
-		System.out.println("-------------------------------------------------------------------------------------------");
-		System.out.println("[help] - Displays command manual.");
-		System.out.println("[myip] - Displays actual IP of computer.");
-		System.out.println("[myport] - Displays listening port.");
-		System.out.println("[connect <destination> <port no>] - Establishes TCP connection to <destination> at <port no>.");
-		System.out.println("[list] - Displays numbered list of connections connected to this process.");
-		System.out.println("[terminate <connection id>] - Terminates connection associated to the id.");
-		System.out.println("[send <connection id> <message>] - Sends message to host associated with the connection id.");
-		System.out.println("[exit] - Closes all connections and terminates this process.");
-		System.out.println("-------------------------------------------------------------------------------------------");
+		System.out.println("-------------------------------------------------------------------------------------------------------------");
+		System.out.println("         List of Available Commands");
+		System.out.println("-------------------------------------------------------------------------------------------------------------");
+		System.out.println("[help]                                     - Displays command manual.");
+		System.out.println("[myip]                                     - Displays actual IP of computer.");
+		System.out.println("[myport]                                   - Displays listening port.");
+		System.out.println("[connect <destination> <port no>]          - Establishes TCP connection to <destination> at <port no>.");
+		System.out.println("[list]                                     - Displays numbered list of connections connected to this process.");
+		System.out.println("[terminate <connection id>]                - Terminates connection associated to the id.");
+		System.out.println("[send <connection id> <message>]           - Sends message to host associated with the connection id.");
+		System.out.println("[exit]                                     - Closes all connections and terminates this process.");
+		System.out.println("-------------------------------------------------------------------------------------------------------------");
 	}
 	
 	/* Displays the IP address of this process */
@@ -155,6 +156,7 @@ public class Chat {
 			}
 			
 			public void run() {
+				// Display success message on other end.
 				System.out.println("Connected! " + this.socket.getPort());
 			}
 		}
