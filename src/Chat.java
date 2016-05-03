@@ -1,18 +1,26 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class Chat {
 	private ServerSocket serverSocket;
 	private Scanner scanner;
-	private ArrayList<Socket> sockets;
+	private HashMap<Integer, Socket> sockets;
+	private int count;
+	private DataInputStream inputFromClient;
+	private DataOutputStream outputToClient;
+	private DataOutputStream toServer;
+	private DataInputStream fromServer;
 	
 	public Chat(int listeningPort) {
-		this.sockets = new ArrayList<Socket>();
+		this.sockets = new HashMap<Integer, Socket>();
+		this.count = 0;
 		this.startServer(listeningPort);
 		(new CommandThread()).start();
 	}
@@ -34,14 +42,14 @@ public class Chat {
 		System.out.println("-------------------------------------------------------------------------------------------------------------");
 		System.out.println("         List of Available Commands");
 		System.out.println("-------------------------------------------------------------------------------------------------------------");
-		System.out.println("[help]                                     - Displays command manual.");
-		System.out.println("[myip]                                     - Displays actual IP of computer.");
-		System.out.println("[myport]                                   - Displays listening port.");
-		System.out.println("[connect <destination> <port no>]          - Establishes TCP connection to <destination> at <port no>.");
-		System.out.println("[list]                                     - Displays numbered list of connections connected to this process.");
-		System.out.println("[terminate <connection id>]                - Terminates connection associated to the id.");
-		System.out.println("[send <connection id> <message>]           - Sends message to host associated with the connection id.");
-		System.out.println("[exit]                                     - Closes all connections and terminates this process.");
+		System.out.println("help                                     - Displays command manual.");
+		System.out.println("myip                                     - Displays actual IP of computer.");
+		System.out.println("myport                                   - Displays listening port.");
+		System.out.println("connect <destination> <port no>          - Establishes TCP connection to <destination> at <port no>.");
+		System.out.println("list                                     - Displays numbered list of connections connected to this process.");
+		System.out.println("terminate <connection id>                - Terminates connection associated to the id.");
+		System.out.println("send <connection id> <message>           - Sends message to host associated with the connection id.");
+		System.out.println("exit                                     - Closes all connections and terminates this process.");
 		System.out.println("-------------------------------------------------------------------------------------------------------------");
 	}
 	
@@ -62,30 +70,47 @@ public class Chat {
 	public boolean connectToServer(String destination, int port) {
 		// Create a socket to connect to the server
 		try {
-			Socket socket = new Socket(destination, port);
+			Socket clientSocket = new Socket(destination, port);
+			count++;
+			sockets.put(count, clientSocket);
+			fromServer = new DataInputStream(clientSocket.getInputStream());
+			toServer = new DataOutputStream(clientSocket.getOutputStream());
+			System.out.println("Successfully connected to " + destination + " at port number " + port + ".");
 		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		}
-		
 		return false;
 	}
 	
 	/* Display a numbered list of all connections this process is part of */
 	public void showConnections() {
-		for (int i = 0; i < this.sockets.size(); i++) {
-			try {
-				System.out.println(i + ": " + this.sockets.get(i).getInetAddress().getLocalHost().getHostAddress() + " " + this.sockets.get(i).getPort());
-			} catch (UnknownHostException e) {
-				e.printStackTrace();
+		if (!sockets.isEmpty()) {
+			System.out.println("id:   IP Address        Port No.");
+			for (Integer i : this.sockets.keySet()) {
+				System.out.println(i + ":    " + this.sockets.get(i).getInetAddress().getHostAddress() + "       " + this.sockets.get(i).getPort());
 			}
 		}
 	}
 	
 	/* Terminates connection with host associated with id */
 	public boolean closeConnection(int id) {
-		return false;
+		if (sockets.containsKey(id)) {
+			try {
+				sockets.get(id).close();
+				sockets.remove(id);
+				count--;
+				this.toServer.writeChars("Successfully terminated connection.");
+//				System.out.println("Successfully terminated connection.");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return true;
+		} else {
+			System.out.println(id + " is not a valid connection.");
+			return false;
+		}
 	}
 	
 	/* Sends message to the host associated with id */
@@ -97,6 +122,9 @@ public class Chat {
 	public boolean exit() {
 		try {
 			this.serverSocket.close();
+			for (Integer i : sockets.keySet()) {
+				this.sockets.get(i).close();
+			}
 			this.scanner.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -125,6 +153,10 @@ public class Chat {
 					String info = command.substring("connect ".length());
 					String[] arr = info.split(" ");
 					connectToServer(arr[0], Integer.parseInt(arr[1]));
+				} else if (command.contains("terminate")) {
+					String info = command.substring("terminate ".length());
+					String[] arr = info.split(" ");
+					closeConnection(Integer.parseInt(arr[0]));
 				} else if (command.equals("exit")) {
 					exit();
 				}
@@ -137,11 +169,14 @@ public class Chat {
 			while(true) {
 				try {
 					// Listen for a connection request
-					Socket socket = serverSocket.accept();
-					sockets.add(socket);
+					Socket connectionSocket = serverSocket.accept();
+					count++;
+					sockets.put(count, connectionSocket);
+					inputFromClient = new DataInputStream(connectionSocket.getInputStream());
+					outputToClient = new DataOutputStream(connectionSocket.getOutputStream());
 					
 					// Create a new thread for the connection
-					(new SocketThread(socket)).start();
+					(new SocketThread(connectionSocket)).start();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -149,15 +184,22 @@ public class Chat {
 		}
 		
 		class SocketThread extends Thread {
-			private Socket socket;
+			private Socket connectionSocket;
 			
 			public SocketThread(Socket socket) {
-				this.socket = socket;
+				this.connectionSocket = socket;
 			}
 			
 			public void run() {
-				// Display success message on other end.
-				System.out.println("Connected! " + this.socket.getPort());
+				System.out.println(connectionSocket.getInetAddress().getHostAddress() + " has successfully connected to you at port " + this.connectionSocket.getPort() + ".");
+				
+				while(true) {
+					try {
+						System.out.println(inputFromClient.readChar());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 		}
 	}
