@@ -19,11 +19,11 @@ public class Chat {
 //	private DataInputStream fromServer;
 	
 	public Chat(int listeningPort) {
-		this.sockets = new HashMap<Integer, Socket>();
-		this.outputStreams = new  HashMap<Integer, DataOutputStream>();
-		this.inputStreams = new HashMap<Integer, DataInputStream>();
-		this.count = 0;
-		this.startServer(listeningPort);
+		sockets = new HashMap<Integer, Socket>();
+		outputStreams = new  HashMap<Integer, DataOutputStream>();
+		inputStreams = new HashMap<Integer, DataInputStream>();
+		count = 0;
+		startServer(listeningPort);
 		(new CommandThread()).start();
 	}
 	
@@ -31,7 +31,7 @@ public class Chat {
 		System.out.println("The server is running!");
 		try {
 			// Create a server socket listening to given port number
-			this.serverSocket = new ServerSocket(listeningPort);
+			serverSocket = new ServerSocket(listeningPort);
 
 			(new ListeningThread()).start();
 		} catch (IOException e) {
@@ -66,20 +66,29 @@ public class Chat {
 	
 	/* Display the port on which this process is listening for incoming connections */
 	public void showListeningPort() {
-		System.out.println(this.serverSocket.getLocalPort());
+		System.out.println(serverSocket.getLocalPort());
 	}
 	
 	public boolean connectToServer(String destination, int port) {
-		// Create a socket to connect to the server
+		// Create a socket to connect to the server	
 		try {
 			Socket clientSocket = new Socket(destination, port);
+			
 			count++;
 			sockets.put(count, clientSocket);
 			
-			this.outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
-			this.inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
+			outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
+			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
 			
-			System.out.println("Successfully connected to " + destination + " at port number " + port + ".");
+			System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() + " at port number " + clientSocket.getPort() + ".");
+			
+//			count++;
+//			sockets.put(count, clientSocket);
+//			
+//			outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
+//			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
+//			
+//			System.out.println("Successfully connected to " + destination + " at port number " + port + ".");
 		} catch (UnknownHostException e) {
 			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		} catch (IOException e) {
@@ -88,12 +97,12 @@ public class Chat {
 		return false;
 	}
 	
-	/* Display a numbered list of all connections this process is part of */
+	/* Display a numbered list of all connections  process is part of */
 	public void showConnections() {
 		if (!sockets.isEmpty()) {
 			System.out.println("id:   IP Address        Port No.");
-			for (Integer i : this.sockets.keySet()) {
-				System.out.println(i + ":    " + this.sockets.get(i).getInetAddress().getHostAddress() + "       " + this.sockets.get(i).getPort());
+			for (Integer i : sockets.keySet()) {
+				System.out.println(i + ":    " + sockets.get(i).getInetAddress().getHostAddress() + "       " + sockets.get(i).getPort());
 			}
 		} else {
 			System.out.println("There are no connections.");
@@ -105,7 +114,7 @@ public class Chat {
 		if (sockets.containsKey(id)) {
 			try {
 				System.out.println("Successfully terminated connection with " + sockets.get(id).getInetAddress().getHostAddress() + ".");
-				this.outputStreams.get(id).writeUTF(Inet4Address.getLocalHost().getHostAddress() + " has terminated the connection.");
+				outputStreams.get(id).writeUTF(Inet4Address.getLocalHost().getHostAddress() + " has terminated the connection.");
 				
 				sockets.get(id).close();
 				sockets.remove(id);
@@ -123,7 +132,7 @@ public class Chat {
 	/* Sends message to the host associated with id */
 	public boolean sendMessage(int id, String message) {
 		try {
-			this.outputStreams.get(id).writeUTF(message);
+			outputStreams.get(id).writeUTF(message);
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -134,11 +143,11 @@ public class Chat {
 	/* Closes all connections and terminates this process */
 	public boolean exit() {
 		try {
-			this.serverSocket.close();
+			serverSocket.close();
 			for (Integer i : sockets.keySet()) {
-				this.sockets.get(i).close();
+				sockets.get(i).close();
 			}
-			this.scanner.close();
+			scanner.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -209,7 +218,7 @@ public class Chat {
 			private Socket connectionSocket;
 			
 			public SocketThread(Socket socket) {
-				this.connectionSocket = socket;
+				connectionSocket = socket;
 			}
 			
 			public void run() {
@@ -218,11 +227,10 @@ public class Chat {
 					DataOutputStream outputToClient = new DataOutputStream(connectionSocket.getOutputStream());
 					
 					while(true) {
-						if (connectionSocket.isClosed()) {
-							System.out.println("Does this work?");
-						}
-						
-						System.out.println(inputFromClient.readUTF());
+//						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
+//						System.out.println("Sender's Port: " + connectionSocket.getPort());
+//						System.out.println("Message: " + inputFromClient.readUTF());
+						System.out.println("Message: " + inputFromClient.readUTF());
 					}
 				} catch (IOException e1) {
 					e1.printStackTrace();
