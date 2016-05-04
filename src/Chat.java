@@ -126,7 +126,9 @@ public class Chat {
 	/* Sends message to the host associated with id */
 	public boolean sendMessage(int id, String message) {
 		try {
+			outputStreams.get(id).writeBoolean(true);
 			outputStreams.get(id).writeUTF(message);
+
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -137,9 +139,11 @@ public class Chat {
 	/* Closes all connections and terminates this process */
 	public boolean exit() {
 		try {
-			serverSocket.close();
+			if (!serverSocket.isClosed())
+				serverSocket.close();
 			for (Integer i : sockets.keySet()) {
-				sockets.get(i).close();
+				if (!sockets.get(i).isClosed())
+					sockets.get(i).close();
 			}
 			scanner.close();
 		} catch (IOException e) {
@@ -221,12 +225,17 @@ public class Chat {
 		public void run() {
 			try {	
 				DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
-				
+								
 				while(true) {
-//					System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
-//					System.out.println("Sender's Port: " + connectionSocket.getPort());
-//					System.out.println("Message: " + inputFromClient.readUTF());
-					System.out.println("Message: " + inputFromClient.readUTF());
+					boolean flag = inputFromClient.readBoolean();
+					String message = inputFromClient.readUTF();
+					
+					if (flag) {
+						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
+						System.out.println("Sender's Port: " + connectionSocket.getPort());
+						System.out.println("Message: " + message);
+						flag = false;
+					}
 				}
 			} catch (IOException e1) {
 				sockets.remove(id);
