@@ -15,8 +15,6 @@ public class Chat {
 	private HashMap<Integer, DataOutputStream> outputStreams;
 	private HashMap<Integer, DataInputStream> inputStreams;
 	private int count;
-//	private DataOutputStream toServer;
-//	private DataInputStream fromServer;
 	
 	public Chat(int listeningPort) {
 		sockets = new HashMap<Integer, Socket>();
@@ -35,7 +33,7 @@ public class Chat {
 
 			(new ListeningThread()).start();
 		} catch (IOException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 	}
 	
@@ -82,13 +80,7 @@ public class Chat {
 			
 			System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() + " at port number " + clientSocket.getPort() + ".");
 			
-//			count++;
-//			sockets.put(count, clientSocket);
-//			
-//			outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
-//			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
-//			
-//			System.out.println("Successfully connected to " + destination + " at port number " + port + ".");
+			(new SocketThread(count, clientSocket)).start();
 		} catch (UnknownHostException e) {
 			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		} catch (IOException e) {
@@ -114,11 +106,11 @@ public class Chat {
 		if (sockets.containsKey(id)) {
 			try {
 				System.out.println("Successfully terminated connection with " + sockets.get(id).getInetAddress().getHostAddress() + ".");
+				outputStreams.get(id).writeBoolean(false);
 				outputStreams.get(id).writeUTF(Inet4Address.getLocalHost().getHostAddress() + " has terminated the connection.");
 				
 				sockets.get(id).close();
 				sockets.remove(id);
-				count--;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -132,7 +124,9 @@ public class Chat {
 	/* Sends message to the host associated with id */
 	public boolean sendMessage(int id, String message) {
 		try {
+			outputStreams.get(id).writeBoolean(true);
 			outputStreams.get(id).writeUTF(message);
+
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -143,15 +137,17 @@ public class Chat {
 	/* Closes all connections and terminates this process */
 	public boolean exit() {
 		try {
-			serverSocket.close();
+			if (!serverSocket.isClosed())
+				serverSocket.close();
 			for (Integer i : sockets.keySet()) {
-				sockets.get(i).close();
+				if (!sockets.get(i).isClosed())
+					sockets.get(i).close();
 			}
 			scanner.close();
+			System.exit(0);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.exit(0);
 		
 		return false;
 	}
@@ -172,18 +168,30 @@ public class Chat {
 				} else if (command.equals("list")) {
 					showConnections();
 				} else if (command.contains("connect")) {
-					String info = command.substring("connect ".length());
-					String[] arr = info.split(" ");
-					connectToServer(arr[0], Integer.parseInt(arr[1]));
+					try {
+						String info = command.substring("connect ".length());
+						String[] arr = info.split(" ");
+						connectToServer(arr[0], Integer.parseInt(arr[1]));
+					} catch (Exception e) {
+						System.out.println("Please enter a valid connection.");
+					}
 				} else if (command.contains("terminate")) {
-					String info = command.substring("terminate ".length());
-					String[] arr = info.split(" ");
-					closeConnection(Integer.parseInt(arr[0]));
+					try {
+						String info = command.substring("terminate ".length());
+						String[] arr = info.split(" ");
+						closeConnection(Integer.parseInt(arr[0]));
+					} catch (Exception e) {
+						System.out.println("Please enter a valid id.");
+					}
 				} else if (command.contains("send")) {
-					String info = command.substring("send ".length());
-					String[] arr = info.split(" ");
-					String message = command.substring("send ? ".length());
-					sendMessage(Integer.parseInt(arr[0]), message);
+					try {
+						String info = command.substring("send ".length());
+						String[] arr = info.split(" ");
+						String message = command.substring("send ? ".length());
+						sendMessage(Integer.parseInt(arr[0]), message);
+					} catch (Exception e) {
+						System.out.println("Please enter a valid message.");
+					}
 				} else if (command.equals("exit")) {
 					exit();
 				}
@@ -207,34 +215,42 @@ public class Chat {
 					inputStreams.put(count, new DataInputStream(connectionSocket.getInputStream()));
 					
 					// Create a new thread for the connection
-					(new SocketThread(connectionSocket)).start();
+					(new SocketThread(count, connectionSocket)).start();
 				} catch (IOException e) {
-					e.printStackTrace();
+					
 				}
 			}
 		}
+	}
+	
+	class SocketThread extends Thread {
+		private int id;
+		private Socket connectionSocket;
 		
-		class SocketThread extends Thread {
-			private Socket connectionSocket;
-			
-			public SocketThread(Socket socket) {
-				connectionSocket = socket;
-			}
-			
-			public void run() {
-				try {	
-					DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
-					DataOutputStream outputToClient = new DataOutputStream(connectionSocket.getOutputStream());
+		public SocketThread(int count, Socket socket) {
+			id = count;
+			connectionSocket = socket;
+		}
+		
+		public void run() {
+			try {	
+				DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
+								
+				while(true) {
+					boolean flag = inputFromClient.readBoolean();
+					String message = inputFromClient.readUTF();
 					
-					while(true) {
-//						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
-//						System.out.println("Sender's Port: " + connectionSocket.getPort());
-//						System.out.println("Message: " + inputFromClient.readUTF());
-						System.out.println("Message: " + inputFromClient.readUTF());
+					if (!flag) {
+						System.out.println(message);
+					} else {
+						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
+						System.out.println("Sender's Port: " + connectionSocket.getPort());
+						System.out.println("Message: " + message);
+						flag = false;
 					}
-				} catch (IOException e1) {
-					e1.printStackTrace();
 				}
+			} catch (IOException e1) {
+				sockets.remove(id);
 			}
 		}
 	}
