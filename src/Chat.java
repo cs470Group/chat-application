@@ -80,7 +80,7 @@ public class Chat {
 			
 			System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() + " at port number " + clientSocket.getPort() + ".");
 			
-			(new SocketThread(clientSocket)).start();
+			(new SocketThread(count, clientSocket)).start();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 //			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
@@ -112,7 +112,7 @@ public class Chat {
 				
 				sockets.get(id).close();
 				sockets.remove(id);
-				count--;
+//				count--;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -201,7 +201,7 @@ public class Chat {
 					inputStreams.put(count, new DataInputStream(connectionSocket.getInputStream()));
 					
 					// Create a new thread for the connection
-					(new SocketThread(connectionSocket)).start();
+					(new SocketThread(count, connectionSocket)).start();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -210,16 +210,17 @@ public class Chat {
 	}
 	
 	class SocketThread extends Thread {
+		private int id;
 		private Socket connectionSocket;
 		
-		public SocketThread(Socket socket) {
+		public SocketThread(int count, Socket socket) {
+			id = count;
 			connectionSocket = socket;
 		}
 		
 		public void run() {
 			try {	
 				DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
-				DataOutputStream outputToClient = new DataOutputStream(connectionSocket.getOutputStream());
 				
 				while(true) {
 //					System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
@@ -228,7 +229,8 @@ public class Chat {
 					System.out.println("Message: " + inputFromClient.readUTF());
 				}
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				sockets.remove(id);
+//				count--;
 			}
 		}
 	}
