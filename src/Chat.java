@@ -33,7 +33,7 @@ public class Chat {
 
 			(new ListeningThread()).start();
 		} catch (IOException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 	}
 	
@@ -82,11 +82,9 @@ public class Chat {
 			
 			(new SocketThread(count, clientSocket)).start();
 		} catch (UnknownHostException e) {
-			e.printStackTrace();
-//			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
+			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		} catch (IOException e) {
-			e.printStackTrace();
-//			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
+			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		}
 		return false;
 	}
@@ -108,11 +106,11 @@ public class Chat {
 		if (sockets.containsKey(id)) {
 			try {
 				System.out.println("Successfully terminated connection with " + sockets.get(id).getInetAddress().getHostAddress() + ".");
+				outputStreams.get(id).writeBoolean(false);
 				outputStreams.get(id).writeUTF(Inet4Address.getLocalHost().getHostAddress() + " has terminated the connection.");
 				
 				sockets.get(id).close();
 				sockets.remove(id);
-//				count--;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -146,10 +144,10 @@ public class Chat {
 					sockets.get(i).close();
 			}
 			scanner.close();
+			System.exit(0);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.exit(0);
 		
 		return false;
 	}
@@ -170,18 +168,30 @@ public class Chat {
 				} else if (command.equals("list")) {
 					showConnections();
 				} else if (command.contains("connect")) {
-					String info = command.substring("connect ".length());
-					String[] arr = info.split(" ");
-					connectToServer(arr[0], Integer.parseInt(arr[1]));
+					try {
+						String info = command.substring("connect ".length());
+						String[] arr = info.split(" ");
+						connectToServer(arr[0], Integer.parseInt(arr[1]));
+					} catch (Exception e) {
+						System.out.println("Please enter a valid connection.");
+					}
 				} else if (command.contains("terminate")) {
-					String info = command.substring("terminate ".length());
-					String[] arr = info.split(" ");
-					closeConnection(Integer.parseInt(arr[0]));
+					try {
+						String info = command.substring("terminate ".length());
+						String[] arr = info.split(" ");
+						closeConnection(Integer.parseInt(arr[0]));
+					} catch (Exception e) {
+						System.out.println("Please enter a valid id.");
+					}
 				} else if (command.contains("send")) {
-					String info = command.substring("send ".length());
-					String[] arr = info.split(" ");
-					String message = command.substring("send ? ".length());
-					sendMessage(Integer.parseInt(arr[0]), message);
+					try {
+						String info = command.substring("send ".length());
+						String[] arr = info.split(" ");
+						String message = command.substring("send ? ".length());
+						sendMessage(Integer.parseInt(arr[0]), message);
+					} catch (Exception e) {
+						System.out.println("Please enter a valid message.");
+					}
 				} else if (command.equals("exit")) {
 					exit();
 				}
@@ -207,7 +217,7 @@ public class Chat {
 					// Create a new thread for the connection
 					(new SocketThread(count, connectionSocket)).start();
 				} catch (IOException e) {
-					e.printStackTrace();
+					
 				}
 			}
 		}
@@ -230,7 +240,9 @@ public class Chat {
 					boolean flag = inputFromClient.readBoolean();
 					String message = inputFromClient.readUTF();
 					
-					if (flag) {
+					if (!flag) {
+						System.out.println(message);
+					} else {
 						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
 						System.out.println("Sender's Port: " + connectionSocket.getPort());
 						System.out.println("Message: " + message);
@@ -239,7 +251,6 @@ public class Chat {
 				}
 			} catch (IOException e1) {
 				sockets.remove(id);
-//				count--;
 			}
 		}
 	}
