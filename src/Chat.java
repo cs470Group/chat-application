@@ -126,6 +126,7 @@ public class Chat {
 		try {
 			outputStreams.get(id).writeBoolean(true);
 			outputStreams.get(id).writeUTF(message);
+			System.out.println("Message sent to " + id + ".");
 
 			return true;
 		} catch (IOException e) {
@@ -140,8 +141,10 @@ public class Chat {
 			if (!serverSocket.isClosed())
 				serverSocket.close();
 			for (Integer i : sockets.keySet()) {
-				if (!sockets.get(i).isClosed())
+				if (!sockets.get(i).isClosed()) {
 					sockets.get(i).close();
+				}
+				sockets.remove(i);
 			}
 			scanner.close();
 			System.exit(0);
@@ -245,7 +248,7 @@ public class Chat {
 					} else {
 						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
 						System.out.println("Sender's Port: " + connectionSocket.getPort());
-						System.out.println("Message: " + message);
+						System.out.println("Message: \"" + message + "\"");
 						flag = false;
 					}
 				}
@@ -256,7 +259,11 @@ public class Chat {
 	}
 
 	public static void main(String[] args) {
-		new Chat(Integer.parseInt(args[0]));
+		try {
+			new Chat(Integer.parseInt(args[0]));
+		} catch (NumberFormatException e) {
+			System.out.println("Please enter a valid listening port number.");
+		}
 	}
 
 }
