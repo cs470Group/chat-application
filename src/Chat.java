@@ -15,8 +15,6 @@ public class Chat {
 	private HashMap<Integer, DataOutputStream> outputStreams;
 	private HashMap<Integer, DataInputStream> inputStreams;
 	private int count;
-//	private DataOutputStream toServer;
-//	private DataInputStream fromServer;
 	
 	public Chat(int listeningPort) {
 		sockets = new HashMap<Integer, Socket>();
@@ -82,17 +80,13 @@ public class Chat {
 			
 			System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() + " at port number " + clientSocket.getPort() + ".");
 			
-//			count++;
-//			sockets.put(count, clientSocket);
-//			
-//			outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
-//			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
-//			
-//			System.out.println("Successfully connected to " + destination + " at port number " + port + ".");
+			(new SocketThread(clientSocket)).start();
 		} catch (UnknownHostException e) {
-			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
+			e.printStackTrace();
+//			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		} catch (IOException e) {
-			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
+			e.printStackTrace();
+//			System.out.println("Failed to connect to " + destination + " at port number " + port + ".");
 		}
 		return false;
 	}
@@ -213,28 +207,28 @@ public class Chat {
 				}
 			}
 		}
+	}
+	
+	class SocketThread extends Thread {
+		private Socket connectionSocket;
 		
-		class SocketThread extends Thread {
-			private Socket connectionSocket;
-			
-			public SocketThread(Socket socket) {
-				connectionSocket = socket;
-			}
-			
-			public void run() {
-				try {	
-					DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
-					DataOutputStream outputToClient = new DataOutputStream(connectionSocket.getOutputStream());
-					
-					while(true) {
-//						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
-//						System.out.println("Sender's Port: " + connectionSocket.getPort());
-//						System.out.println("Message: " + inputFromClient.readUTF());
-						System.out.println("Message: " + inputFromClient.readUTF());
-					}
-				} catch (IOException e1) {
-					e1.printStackTrace();
+		public SocketThread(Socket socket) {
+			connectionSocket = socket;
+		}
+		
+		public void run() {
+			try {	
+				DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
+				DataOutputStream outputToClient = new DataOutputStream(connectionSocket.getOutputStream());
+				
+				while(true) {
+//					System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
+//					System.out.println("Sender's Port: " + connectionSocket.getPort());
+//					System.out.println("Message: " + inputFromClient.readUTF());
+					System.out.println("Message: " + inputFromClient.readUTF());
 				}
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
 		}
 	}
