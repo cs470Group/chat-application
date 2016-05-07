@@ -188,7 +188,7 @@ public class Chat {
 				sockets.get(id).close();
 				sockets.remove(id);
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.out.println("PLease enter a valid connection. ");
 			}
 			return true;
 		} else {
@@ -210,7 +210,7 @@ public class Chat {
 
 			return true;
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Invalid input, please try again. ");
 			return false;
 		}
 	}
@@ -231,7 +231,7 @@ public class Chat {
 			scanner.close();
 			System.exit(0);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.exit(0);
 		}catch (ConcurrentModificationException f){
 			System.exit(0);
 		}
