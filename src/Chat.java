@@ -16,13 +16,42 @@ import java.util.*;
  */
 
 public class Chat {
+	/**
+	 * Server Socket that the clients connect to. 
+	 */
 	private ServerSocket serverSocket;
+	
+	/**
+	 * Takes in user input.
+	 */ 
 	private Scanner scanner;
+	
+	/**
+	 * HashMap to hold the sockets.
+	 */
 	private HashMap<Integer, Socket> sockets;
+	
+	/**
+	 * Writes data to the HashMap
+	 */
 	private HashMap<Integer, DataOutputStream> outputStreams;
+	
+	/**
+	 * Reads data from the HashMap
+	 */ 
 	private HashMap<Integer, DataInputStream> inputStreams;
+	
+	/**
+	 * Variable to hold the number of clients that connect to the server.
+	 */ 
 	private int count;
 	
+	/**
+	 *
+	 * Constructor for the Chat 
+	 * @param listeningPort 
+	 * 
+	 */
 	public Chat(int listeningPort) {
 		sockets = new HashMap<Integer, Socket>();
 		outputStreams = new  HashMap<Integer, DataOutputStream>();
@@ -31,7 +60,14 @@ public class Chat {
 		startServer(listeningPort);
 		(new CommandThread()).start();
 	}
-	
+
+	/**
+	 * This method starts the Server.
+	 * A server socket is created for clients to connect to.
+	 * 
+	 * @param listeningPort The port at which the server listens for connections. 
+	 * 
+	 */
 	public void startServer(int listeningPort) {
 		System.out.println("The server is running!");
 		try {
@@ -95,7 +131,7 @@ public class Chat {
 	 *  @param destination The IP address of the client.
 	 *
 	 *  @return True if the IP is a duplicate, otherwise false.
-     */
+     	 */
 	public boolean isDuplicate(String destination){
 		for (Integer i: sockets.keySet()){
 			if (destination.equals(sockets.get(i).getInetAddress().getHostAddress())){
@@ -144,7 +180,7 @@ public class Chat {
 
 			if (clientSocket.isClosed() == true){
 				//the server will close a connection right away if it has reached it's maximum
-				//if we see that the connectin is closed, it means the server has reached it's maximum
+				//if we see that the connection is closed, it means the server has reached it's maximum
 				System.out.println("Max connections reached at server. ");
 			}else{
 				System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() +
@@ -177,6 +213,8 @@ public class Chat {
 	/** 
 	 * This method terminates connection with host associated with id. 
 	 * @param id The id of the client whose connection will be terminated.
+	 * 
+	 * @return True if the connection closes successfully, otherwise false.
 	 */
 	public boolean closeConnection(int id) {
 		if (sockets.containsKey(id)) {
@@ -337,7 +375,16 @@ public class Chat {
 	}
 	
 	class SocketThread extends Thread {
+		
+		/**
+		 * Id number of the client  
+		 */
 		private int id;
+		
+		/**
+		 * Connection socket that the server uses to
+		 * respond to clients.
+		 */ 
 		private Socket connectionSocket;
 		
 		/**
