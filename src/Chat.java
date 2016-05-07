@@ -2,10 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.net.Inet4Address;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.*;
 
 /**
@@ -108,7 +105,23 @@ public class Chat {
 		return false;
 	}
 
-
+	/**
+	 *  This method checks if the user is trying to connect to itself.
+	 *
+	 *  @param destination The IP address of the client.
+	 *
+	 *  @return True if the IP is the same IP as the current user, otherwise false.
+	 */
+	public boolean isSelfConnect(String destination){
+		try {
+			if (destination.equals(InetAddress.getLocalHost().getHostAddress())){
+				return true;
+            }
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 
 	/**
 	 * This method connects the client to the server.
@@ -257,7 +270,9 @@ public class Chat {
 							//check if duplicate
 							if (isDuplicate(arr[0]) == true){
 								System.out.println("There is already a connection with that IP address");
-							}else connectToServer(arr[0], Integer.parseInt(arr[1]));
+							}else if (isSelfConnect(arr[0]) == true){
+								System.out.println("You can't chat with yourself.");
+							} else connectToServer(arr[0], Integer.parseInt(arr[1]));
 						} catch (Exception e) {
 							System.out.println("Please enter a valid connection.");
 						}
