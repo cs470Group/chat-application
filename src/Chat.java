@@ -1,12 +1,9 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.lang.reflect.Array;
+import java.net.*;
+import java.util.*;
 
 /**
  * The Chat program implements an application that 
@@ -82,7 +79,50 @@ public class Chat {
 	public void showListeningPort() {
 		System.out.println(serverSocket.getLocalPort());
 	}
-	
+
+	/**
+	 *  This method returns true if client can no longer support more connections.
+	 *
+	 *  @return True if it can't support anymore outgoing connections. Otherwise, false.
+	 */
+	public boolean isAbove3() {
+		if (sockets.size() == 3) return true;
+		else return false;
+	}
+
+	/**
+	 *  This method determines if an IP is already being used in a connection.
+	 *  @param destination The IP address of the client.
+	 *
+	 *  @return True if the IP is a duplicate, otherwise false.
+     */
+	public boolean isDuplicate(String destination){
+		for (Integer i: sockets.keySet()){
+			if (destination.equals(sockets.get(i).getInetAddress().getHostAddress())){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 *  This method checks if the user is trying to connect to itself.
+	 *
+	 *  @param destination The IP address of the client.
+	 *
+	 *  @return True if the IP is the same IP as the current user, otherwise false.
+	 */
+	public boolean isSelfConnect(String destination){
+		try {
+			if (destination.equals(InetAddress.getLocalHost().getHostAddress())){
+				return true;
+            }
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 	/**
 	 * This method connects the client to the server.
 	 * @param destination The IP address of the client.
@@ -95,14 +135,21 @@ public class Chat {
 		// Create a socket to connect to the server	
 		try {
 			Socket clientSocket = new Socket(destination, port);
-			
+
 			count++;
 			sockets.put(count, clientSocket);
 			
 			outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
 			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
-			
-			System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() + " at port number " + clientSocket.getPort() + ".");
+
+			if (clientSocket.isClosed() == true){
+				//the server will close a connection right away if it has reached it's maximum
+				//if we see that the connectin is closed, it means the server has reached it's maximum
+				System.out.println("Max connections reached at server. ");
+			}else{
+				System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() +
+						" at port number " + clientSocket.getPort() + ".");
+			}
 			
 			(new SocketThread(count, clientSocket)).start();
 		} catch (UnknownHostException e) {
@@ -185,6 +232,8 @@ public class Chat {
 			System.exit(0);
 		} catch (IOException e) {
 			e.printStackTrace();
+		}catch (ConcurrentModificationException f){
+			System.exit(0);
 		}
 		
 		return false;
@@ -214,12 +263,21 @@ public class Chat {
 				} else if (command.equals("list")) {
 					showConnections();
 				} else if (command.contains("connect")) {
-					try {
-						String info = command.substring("connect ".length());
-						String[] arr = info.split(" ");
-						connectToServer(arr[0], Integer.parseInt(arr[1]));
-					} catch (Exception e) {
-						System.out.println("Please enter a valid connection.");
+					if (isAbove3() == false){
+						try {
+							String info = command.substring("connect ".length());
+							String[] arr = info.split(" ");
+							//check if duplicate
+							if (isDuplicate(arr[0]) == true){
+								System.out.println("There is already a connection with that IP address");
+							}else if (isSelfConnect(arr[0]) == true){
+								System.out.println("You can't chat with yourself.");
+							} else connectToServer(arr[0], Integer.parseInt(arr[1]));
+						} catch (Exception e) {
+							System.out.println("Please enter a valid connection.");
+						}
+					}else{
+						System.out.println("Chat program can't support more than 3 connections.");
 					}
 				} else if (command.contains("terminate")) {
 					try {
@@ -255,17 +313,22 @@ public class Chat {
 				try {
 					// Listen for a connection request
 					Socket connectionSocket = serverSocket.accept();
-					
-					System.out.println(connectionSocket.getInetAddress().getHostAddress() + " has successfully connected to you at port " + connectionSocket.getPort() + ".");
-					
-					count++;
-					sockets.put(count, connectionSocket);
-					
-					outputStreams.put(count, new DataOutputStream(connectionSocket.getOutputStream()));
-					inputStreams.put(count, new DataInputStream(connectionSocket.getInputStream()));
-					
-					// Create a new thread for the connection
-					(new SocketThread(count, connectionSocket)).start();
+
+					if (sockets.size() == 3){
+						//the connection is closed right away if there are 3 sockets
+						connectionSocket.close();
+					}else{
+						System.out.println(connectionSocket.getInetAddress().getHostAddress() + " has successfully connected to you at port " + connectionSocket.getPort() + ".");
+
+						count++;
+						sockets.put(count, connectionSocket);
+
+						outputStreams.put(count, new DataOutputStream(connectionSocket.getOutputStream()));
+						inputStreams.put(count, new DataInputStream(connectionSocket.getInputStream()));
+
+						// Create a new thread for the connection
+						(new SocketThread(count, connectionSocket)).start();
+					}
 				} catch (IOException e) {
 					
 				}
@@ -316,6 +379,7 @@ public class Chat {
 			}
 		}
 	}
+
 
 	public static void main(String[] args) {
 		try {
