@@ -8,6 +8,16 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Scanner;
 
+/**
+ * The Chat program implements an application that 
+ * allows 3 clients (at most) to connect to server 
+ * and send messages to each other.
+ * 
+ * @authors Jeanne Pascua, Raymond Wu, and Alyssa Solon
+ * @since 2016-05-08
+ *
+ */
+
 public class Chat {
 	private ServerSocket serverSocket;
 	private Scanner scanner;
@@ -37,7 +47,9 @@ public class Chat {
 		}
 	}
 	
-	/* Display information about the available user interface options / command manual */
+	/**
+	 *  This method displays information about the available user interface options / command manual. 
+	 */
 	public void showHelp() {
 		System.out.println("-------------------------------------------------------------------------------------------------------------");
 		System.out.println("         List of Available Commands");
@@ -53,7 +65,9 @@ public class Chat {
 		System.out.println("-------------------------------------------------------------------------------------------------------------");
 	}
 	
-	/* Displays the IP address of this process */
+	/**
+	 *  This method displays the IP address of this process 
+	 */
 	public void showRealIP() {
 		try {
 			System.out.println(Inet4Address.getLocalHost().getHostAddress());
@@ -62,11 +76,21 @@ public class Chat {
 		}	
 	}
 	
-	/* Display the port on which this process is listening for incoming connections */
+	/** 
+	 * This method displays the port on which this process is listening for incoming connections. 
+	 */
 	public void showListeningPort() {
 		System.out.println(serverSocket.getLocalPort());
 	}
 	
+	/**
+	 * This method connects the client to the server.
+	 * @param destination The IP address of the client.
+	 * @param port The port of the client.
+	 * 
+	 * @return Displays a success message when the client connects successfully and a failure message if a connection cannot be made.
+	 * 
+	 */
 	public boolean connectToServer(String destination, int port) {
 		// Create a socket to connect to the server	
 		try {
@@ -89,7 +113,9 @@ public class Chat {
 		return false;
 	}
 	
-	/* Display a numbered list of all connections  process is part of */
+	/** 
+	 * This method displays a numbered list of all connections process is part of 
+	 */
 	public void showConnections() {
 		if (!sockets.isEmpty()) {
 			System.out.println("id:   IP Address        Port No.");
@@ -101,7 +127,10 @@ public class Chat {
 		}
 	}
 	
-	/* Terminates connection with host associated with id */
+	/** 
+	 * This method terminates connection with host associated with id. 
+	 * @param id The id of the client whose connection will be terminated.
+	 */
 	public boolean closeConnection(int id) {
 		if (sockets.containsKey(id)) {
 			try {
@@ -121,7 +150,11 @@ public class Chat {
 		}
 	}
 	
-	/* Sends message to the host associated with id */
+	/** 
+	 * This method sends message to the host associated with id.
+	 * @param id The id of the client that message will be sent to.
+	 * @param message The message to be sent to the designated id.
+	 */
 	public boolean sendMessage(int id, String message) {
 		try {
 			outputStreams.get(id).writeBoolean(true);
@@ -135,7 +168,9 @@ public class Chat {
 		}
 	}
 	
-	/* Closes all connections and terminates this process */
+	/** 
+	 * This method closes all connections and terminates this process. 
+	 */
 	public boolean exit() {
 		try {
 			if (!serverSocket.isClosed())
@@ -156,6 +191,14 @@ public class Chat {
 	}
 	
 	class CommandThread extends Thread {
+		
+		/**
+	 	 * 
+	 	 * This method takes in user input and displays the information 
+	 	 * the user wants to see depending on the command the 
+	 	 * user enters.
+	 	 *
+	 	 */
 		public void run() {
 			scanner = new Scanner(System.in);
 			
@@ -203,6 +246,10 @@ public class Chat {
 	}
 	
 	class ListeningThread extends Thread {
+		
+		/**
+		 * This method listens for a connection request and creates a new thread with the connection. 
+		 */
 		public void run() {
 			while(true) {
 				try {
@@ -230,11 +277,22 @@ public class Chat {
 		private int id;
 		private Socket connectionSocket;
 		
+		/**
+		 * Constructor of the SocketThread class. 
+		 * @param count The client's id number.
+		 * @param socket The socket that the client connects through.
+		 * 
+		 */
 		public SocketThread(int count, Socket socket) {
 			id = count;
 			connectionSocket = socket;
 		}
 		
+		/**
+		 * This method takes input from one client and sends it to 
+		 * the designated client that the message is specified for.
+		 * The message and details of where it was sent from is printed out.
+		 */
 		public void run() {
 			try {	
 				DataInputStream inputFromClient = new DataInputStream(connectionSocket.getInputStream());
