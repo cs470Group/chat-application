@@ -1,0 +1,1 @@
+java -jar chat-application.jar %1
