@@ -5,8 +5,10 @@ import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * The Chat program implements an application that 
@@ -82,7 +84,17 @@ public class Chat {
 	public void showListeningPort() {
 		System.out.println(serverSocket.getLocalPort());
 	}
-	
+
+	/**
+	 *  This method returns true if client can no longer support more connections.
+	 *
+	 *  @return True if it can't support anymore outgoing connections. Otherwise, false.
+	 */
+	public boolean clientCheck3() {
+		if (sockets.size() == 3) return true;
+		else return false;
+	}
+
 	/**
 	 * This method connects the client to the server.
 	 * @param destination The IP address of the client.
@@ -95,14 +107,19 @@ public class Chat {
 		// Create a socket to connect to the server	
 		try {
 			Socket clientSocket = new Socket(destination, port);
-			
+
 			count++;
 			sockets.put(count, clientSocket);
 			
 			outputStreams.put(count, new DataOutputStream(clientSocket.getOutputStream()));
 			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
-			
-			System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() + " at port number " + clientSocket.getPort() + ".");
+
+			if (clientSocket.isClosed() == true){
+				System.out.println("Max connections reached at server. ");
+			}else{
+				System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() +
+						" at port number " + clientSocket.getPort() + ".");
+			}
 			
 			(new SocketThread(count, clientSocket)).start();
 		} catch (UnknownHostException e) {
@@ -214,12 +231,16 @@ public class Chat {
 				} else if (command.equals("list")) {
 					showConnections();
 				} else if (command.contains("connect")) {
-					try {
-						String info = command.substring("connect ".length());
-						String[] arr = info.split(" ");
-						connectToServer(arr[0], Integer.parseInt(arr[1]));
-					} catch (Exception e) {
-						System.out.println("Please enter a valid connection.");
+					if (clientCheck3() == false){
+						try {
+							String info = command.substring("connect ".length());
+							String[] arr = info.split(" ");
+							connectToServer(arr[0], Integer.parseInt(arr[1]));
+						} catch (Exception e) {
+							System.out.println("Please enter a valid connection.");
+						}
+					}else{
+						System.out.println("Chat program can't support more than 3 connections.");
 					}
 				} else if (command.contains("terminate")) {
 					try {
@@ -255,17 +276,22 @@ public class Chat {
 				try {
 					// Listen for a connection request
 					Socket connectionSocket = serverSocket.accept();
-					
-					System.out.println(connectionSocket.getInetAddress().getHostAddress() + " has successfully connected to you at port " + connectionSocket.getPort() + ".");
-					
-					count++;
-					sockets.put(count, connectionSocket);
-					
-					outputStreams.put(count, new DataOutputStream(connectionSocket.getOutputStream()));
-					inputStreams.put(count, new DataInputStream(connectionSocket.getInputStream()));
-					
-					// Create a new thread for the connection
-					(new SocketThread(count, connectionSocket)).start();
+
+					if (sockets.size() == 3){
+						//the connection is closed right away if there are 3 sockets
+						connectionSocket.close();
+					}else{
+						System.out.println(connectionSocket.getInetAddress().getHostAddress() + " has successfully connected to you at port " + connectionSocket.getPort() + ".");
+
+						count++;
+						sockets.put(count, connectionSocket);
+
+						outputStreams.put(count, new DataOutputStream(connectionSocket.getOutputStream()));
+						inputStreams.put(count, new DataInputStream(connectionSocket.getInputStream()));
+
+						// Create a new thread for the connection
+						(new SocketThread(count, connectionSocket)).start();
+					}
 				} catch (IOException e) {
 					
 				}
@@ -315,6 +341,7 @@ public class Chat {
 			}
 		}
 	}
+
 
 	public static void main(String[] args) {
 		try {
