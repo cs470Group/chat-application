@@ -367,6 +367,7 @@ public class Chat {
 					if (!flag) {
 						System.out.println(message);
 					} else {
+						System.out.println("\n");
 						System.out.println("Message received from " + connectionSocket.getInetAddress().getHostAddress());
 						System.out.println("Sender's Port: " + connectionSocket.getPort());
 						System.out.println("Message: \"" + message + "\"");
