@@ -219,6 +219,8 @@ public class Chat {
 			System.exit(0);
 		} catch (IOException e) {
 			e.printStackTrace();
+		}catch (ConcurrentModificationException f){
+			System.exit(0);
 		}
 		
 		return false;
