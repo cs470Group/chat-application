@@ -1,14 +1,12 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The Chat program implements an application that 
@@ -90,10 +88,27 @@ public class Chat {
 	 *
 	 *  @return True if it can't support anymore outgoing connections. Otherwise, false.
 	 */
-	public boolean clientCheck3() {
+	public boolean isAbove3() {
 		if (sockets.size() == 3) return true;
 		else return false;
 	}
+
+	/**
+	 *  This method determines if an IP is already being used in a connection.
+	 *  @param destination The IP address of the client.
+	 *
+	 *  @return True if the IP is a duplicate, otherwise false.
+     */
+	public boolean isDuplicate(String destination){
+		for (Integer i: sockets.keySet()){
+			if (destination.equals(sockets.get(i).getInetAddress().getHostAddress())){
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 
 	/**
 	 * This method connects the client to the server.
@@ -115,6 +130,8 @@ public class Chat {
 			inputStreams.put(count, new DataInputStream(clientSocket.getInputStream()));
 
 			if (clientSocket.isClosed() == true){
+				//the server will close a connection right away if it has reached it's maximum
+				//if we see that the connectin is closed, it means the server has reached it's maximum
 				System.out.println("Max connections reached at server. ");
 			}else{
 				System.out.println("Successfully connected to " + clientSocket.getInetAddress().getHostAddress() +
@@ -231,11 +248,14 @@ public class Chat {
 				} else if (command.equals("list")) {
 					showConnections();
 				} else if (command.contains("connect")) {
-					if (clientCheck3() == false){
+					if (isAbove3() == false){
 						try {
 							String info = command.substring("connect ".length());
 							String[] arr = info.split(" ");
-							connectToServer(arr[0], Integer.parseInt(arr[1]));
+							//check if duplicate
+							if (isDuplicate(arr[0]) == true){
+								System.out.println("There is already a connection with that IP address");
+							}else connectToServer(arr[0], Integer.parseInt(arr[1]));
 						} catch (Exception e) {
 							System.out.println("Please enter a valid connection.");
 						}
